@@ -22,4 +22,19 @@ export class GameController {
       console.log(error);
     }
   };
+
+  static getGameById = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    try {
+      const game = await Game.findById(id);
+
+      if (!game) {
+        const error = new Error("Game not found");
+        return res.status(404).json({ error: error.message });
+      }
+      res.json(game);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 }

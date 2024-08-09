@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { body } from "express-validator";
+import { body, param } from "express-validator";
 import { GameController } from "../controllers/GameController";
 import { handleInputErrors } from "../middleware/validation";
 
@@ -18,5 +18,12 @@ router.post(
 );
 
 router.get("/", GameController.getAllGames);
+
+router.get(
+  "/:id",
+  param("id").isMongoId().withMessage("Invalid Game ID"),
+  handleInputErrors,
+  GameController.getGameById
+);
 
 export default router;
