@@ -13,7 +13,7 @@ export class GameController {
       res.status(500).send("Error creating game");
     }
   };
-  
+
   static getAllGames = async (req: Request, res: Response) => {
     try {
       const games = await Game.find({});
@@ -23,12 +23,12 @@ export class GameController {
       res.status(500).send("Error getting games");
     }
   };
-  
+
   static getGameById = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
       const game = await Game.findById(id);
-      
+
       if (!game) {
         const error = new Error("Game not found");
         return res.status(404).json({ error: error.message });
@@ -39,7 +39,7 @@ export class GameController {
       res.status(500).send("Error getting game by id");
     }
   };
-  
+
   static updateGame = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
@@ -49,9 +49,26 @@ export class GameController {
         const error = new Error("Game not found");
         return res.status(404).json({ error: error.message });
       }
-      
+
       await game.save();
       res.send("Game updated successfully");
+    } catch (error) {
+      console.log(error);
+      res.status(500).send("Error updating game");
+    }
+  };
+
+  static deleteGame = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    try {
+      const game = await Game.findById(id);
+      if (!game) {
+        const error = new Error("Game not found");
+        return res.status(404).json({ error: error.message });
+      }
+
+      await game.deleteOne();
+      res.send("Game deleted successfully");
     } catch (error) {
       console.log(error);
       res.status(500).send("Error updating game");

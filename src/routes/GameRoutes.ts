@@ -49,4 +49,11 @@ router.put(
   GameController.updateGame
 );
 
+router.delete(
+  "/:id",
+  param("id").isMongoId().withMessage("Invalid Game ID"),
+  handleInputErrors,
+  GameController.deleteGame
+);
+
 export default router;
