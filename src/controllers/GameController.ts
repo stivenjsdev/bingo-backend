@@ -2,7 +2,6 @@ import type { Request, Response } from "express";
 import Game from "../models/Game";
 
 export class GameController {
-
   static createGame = async (req: Request, res: Response) => {
     console.log(req.body);
     const game = new Game(req.body);
@@ -13,9 +12,14 @@ export class GameController {
       console.log(error);
       res.status(500).send("Error creating game");
     }
-  }
+  };
 
   static getAllGames = async (req: Request, res: Response) => {
-    res.send("Get all games");
-  }
+    try {
+      const games = await Game.find({});
+      res.json(games);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 }
