@@ -31,7 +31,7 @@ const GameSchema: Schema = new Schema<GameType>({
     type: [Number],
     default: [],
   },
-});
+}, { timestamps: true });
 
 const Game = mongoose.model<GameType>("Game", GameSchema);
 
