@@ -21,7 +21,7 @@ const GameSchema: Schema = new Schema<GameType>({
   },
   players: {
     type: [String],
-    required: true,
+    default: [],
   },
   winner: {
     type: String,
@@ -29,7 +29,7 @@ const GameSchema: Schema = new Schema<GameType>({
   },
   numbersDrawn: {
     type: [Number],
-    required: true,
+    default: [],
   },
 });
 
