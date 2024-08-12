@@ -3,7 +3,7 @@ import { Game } from "../models/Game";
 
 export class GameController {
   static createGame = async (req: Request, res: Response) => {
-    console.log(req.body);
+    console.log(req.adminUser);
     const game = new Game(req.body);
     try {
       await game.save();

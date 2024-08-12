@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { Token } from "../models/Token";
 import { UserAdmin } from "../models/UserAdmin";
 import { comparePassword, hashPassword } from "../utils/auth";
+import { generateJWT } from "../utils/jwt";
 import { generateToken } from "../utils/token";
 
 export class AuthController {
@@ -58,7 +59,10 @@ export class AuthController {
         return res.status(401).json({ error: error.message });
       }
 
-      res.send("Login successful");
+      // Generate a jwt
+      const token = generateJWT({ id: user.id });
+
+      res.send(token);
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
