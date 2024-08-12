@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { Token } from "../models/Token";
 import { UserAdmin } from "../models/UserAdmin";
-import { hashPassword } from "../utils/auth";
+import { comparePassword, hashPassword } from "../utils/auth";
 import { generateToken } from "../utils/token";
 
 export class AuthController {
@@ -33,6 +33,32 @@ export class AuthController {
       res.send(
         "Account created successfully, check your email to verify your account"
       );
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  };
+
+  static login = async (req: Request, res: Response) => {
+    try {
+      const { email, password } = req.body;
+
+      // Check if user exists
+      const user = await UserAdmin.findOne({ email });
+
+      if (!user) {
+        const error = new Error("User not found");
+        return res.status(404).json({ error: error.message });
+      }
+
+      // Check if password is correct
+      const isMatch = await comparePassword(password, user.password);
+
+      if (!isMatch) {
+        const error = new Error("Invalid password");
+        return res.status(401).json({ error: error.message });
+      }
+
+      res.send("Login successful");
     } catch (error) {
       res.status(500).json({ error: error.message });
     }

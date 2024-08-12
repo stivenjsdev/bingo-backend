@@ -11,7 +11,7 @@ router.post(
   body("password")
     .isLength({ min: 8 })
     .withMessage("Password must be at least 8 characters long"),
-  body("password_confirmation").custom((value, {req}) => {
+  body("password_confirmation").custom((value, { req }) => {
     if (value !== req.body.password) {
       throw new Error("Passwords must match");
     }
@@ -20,6 +20,16 @@ router.post(
   body("email").isEmail().withMessage("Email is invalid"),
   handleInputErrors,
   AuthController.createAccount
+);
+
+router.post(
+  "/login",
+  body("email").isEmail().withMessage("Email is invalid"),
+  body("password")
+    .notEmpty()
+    .withMessage("Password is required"),
+  handleInputErrors,
+  AuthController.login
 );
 
 export default router;
