@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import Game from "../models/Game";
+import { Game } from "../models/Game";
 
 export class GameController {
   static createGame = async (req: Request, res: Response) => {

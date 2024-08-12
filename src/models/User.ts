@@ -8,7 +8,7 @@ export type UserType = Document & {
   active: boolean;
 };
 
-const useSchema: Schema = new Schema<UserType>(
+const userSchema: Schema = new Schema<UserType>(
   {
     name: {
       type: String,
@@ -40,4 +40,4 @@ const useSchema: Schema = new Schema<UserType>(
   { timestamps: true }
 );
 
-const User = mongoose.model<UserType>("User", useSchema);
+export const User = mongoose.model<UserType>("User", userSchema);
