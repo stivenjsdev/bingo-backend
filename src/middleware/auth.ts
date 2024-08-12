@@ -37,7 +37,7 @@ export const authenticate = async (
       req.adminUser = user;
     }
   } catch (error) {
-    res.status(500).json({ error: "Invalid Token" });
+    return res.status(500).json({ error: "Invalid Token" });
   }
 
   next();
