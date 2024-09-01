@@ -1,12 +1,13 @@
 import { Router } from "express";
 import { body } from "express-validator";
 import { AuthController } from "../controllers/AuthController";
+import { authenticate } from "../middleware/auth";
 import { handleInputErrors } from "../middleware/validation";
 
 const router = Router();
 
 router.post(
-  "/create-account",
+  "/admin/create-account",
   body("username").notEmpty().withMessage("Username is required"),
   body("password")
     .isLength({ min: 8 })
@@ -19,17 +20,37 @@ router.post(
   }),
   body("email").isEmail().withMessage("Email is invalid"),
   handleInputErrors,
-  AuthController.createAccount
+  AuthController.adminCreateAccount
+);
+
+router.post(
+  "/admin/login",
+  body("email").isEmail().withMessage("Email is invalid"),
+  body("password").notEmpty().withMessage("Password is required"),
+  handleInputErrors,
+  AuthController.adminLogin
 );
 
 router.post(
   "/login",
-  body("email").isEmail().withMessage("Email is invalid"),
-  body("password")
+  body("code")
     .notEmpty()
-    .withMessage("Password is required"),
+    .withMessage("Code is required")
+    .isLength({ min: 8, max: 8 })
+    .withMessage("Code must be 8 characters long"),
   handleInputErrors,
   AuthController.login
+);
+
+router.get("/user", authenticate, AuthController.user);
+
+router.post(
+  "/create-player",
+  // adminAuthenticate,
+  body("name").notEmpty().withMessage("Name is required"),
+  body("wpNumber").notEmpty().withMessage("WP Number is required"),
+  handleInputErrors,
+  AuthController.createPlayer
 );
 
 export default router;

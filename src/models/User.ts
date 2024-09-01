@@ -26,6 +26,8 @@ const userSchema: Schema = new Schema<UserType>(
       type: String,
       required: true,
       trim: true,
+      minlength: 8,
+      maxlength: 8,
       unique: true,
     },
     bingoCard: {

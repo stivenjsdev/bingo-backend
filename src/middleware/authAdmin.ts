@@ -1,16 +1,16 @@
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
-import { User, UserType } from "../models/User";
+import { UserAdmin, UserAdminType } from "../models/UserAdmin";
 
 declare global {
   namespace Express {
     interface Request {
-      user?: UserType;
+      adminUser?: UserAdminType;
     }
   }
 }
 
-export const authenticate = async (
+export const adminAuthenticate = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -28,18 +28,13 @@ export const authenticate = async (
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     if (typeof decoded === "object" && decoded.id) {
-      const user = await User.findById(decoded.id).select("_id name bingoCard active");
+      const user = await UserAdmin.findById(decoded.id).select("_id username email");
       if (!user) {
         const error = new Error("Invalid Token");
         return res.status(401).json({ error: error.message });
       }
-      // validate if user is active
-      if (!user.active) {
-        const error = new Error("User is not active");
-        return res.status(401).json({ error: error.message });
-      }
 
-      req.user = user;
+      req.adminUser = user;
     }
   } catch (error) {
     return res.status(500).json({ error: "Invalid Token" });

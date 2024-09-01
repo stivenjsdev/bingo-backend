@@ -1,14 +1,14 @@
 import { Router } from "express";
 import { body, param } from "express-validator";
 import { GameController } from "../controllers/GameController";
-import { authenticate } from "../middleware/auth";
+import { adminAuthenticate } from "../middleware/authAdmin";
 import { handleInputErrors } from "../middleware/validation";
 
 const router = Router();
 
 router.post(
   "/",
-  authenticate,
+  adminAuthenticate,
   body("gameName")
     .isString()
     .isLength({ min: 3 })
