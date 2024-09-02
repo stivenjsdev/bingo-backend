@@ -1,10 +1,8 @@
 import type { Request, Response } from "express";
-import { Token } from "../models/Token";
 import { User } from "../models/User";
 import { UserAdmin } from "../models/UserAdmin";
 import { comparePassword, hashPassword } from "../utils/auth";
 import { generateJWT } from "../utils/jwt";
-import { generateToken } from "../utils/token";
 
 export class AuthController {
   static adminCreateAccount = async (req: Request, res: Response) => {
@@ -26,15 +24,18 @@ export class AuthController {
       user.password = await hashPassword(password);
 
       // Generate a verification token
-      const token = new Token();
-      token.token = generateToken();
-      token.user = user.id;
+      // const token = new Token();
+      // token.token = generateToken();
+      // token.user = user.id;
 
-      await Promise.allSettled([user.save(), token.save()]);
+      // await Promise.allSettled([user.save(), token.save()]);
 
-      res.send(
-        "Account created successfully, check your email to verify your account"
-      );
+      await user.save();
+
+      // res.send(
+      //   "Account created successfully, check your email to verify your account"
+      // );
+      res.send("Admin Account created successfully");
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
@@ -63,7 +64,7 @@ export class AuthController {
       // Generate a jwt
       const token = generateJWT({ id: user.id });
 
-      res.send(token);
+      res.json({ token });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
@@ -76,10 +77,10 @@ export class AuthController {
   static login = async (req: Request, res: Response) => {
     try {
       const { code } = req.body;
-      
+
       // Check if user exists
       const user = await User.findOne({ code });
-      
+
       if (!user) {
         const error = new Error("User not found OR invalid code");
         return res.status(404).json({ error: error.message });
@@ -88,7 +89,7 @@ export class AuthController {
       // Generate a jwt
       const token = generateJWT({ id: user.id });
 
-      res.json({token});
+      res.json({ token });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
@@ -117,10 +118,11 @@ export class AuthController {
       const userData = {
         name,
         wpNumber,
-        code:  name.substring(0, 3).toLowerCase() + generateRandomFourDigitNumber(),
+        code:
+          name.substring(0, 3).toLowerCase() + generateRandomFourDigitNumber(),
         bingoCard: [],
         active: true,
-      }
+      };
       const user = new User(userData);
 
       // Hash code // TODO: Implement this

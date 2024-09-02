@@ -1,10 +1,17 @@
 import type { Request, Response } from "express";
 import { Game } from "../models/Game";
+import { generateUnsortedNumbers } from "../utils/game";
 
 export class GameController {
   static createGame = async (req: Request, res: Response) => {
     console.log(req.adminUser);
-    const game = new Game(req.body);
+    // generate a list of unsorted numbers from 1 to 75
+    const unsortedNumbers = generateUnsortedNumbers(75);
+    const game = new Game({
+      ...req.body,
+      unsortedNumbers,
+      userAdmin: req.adminUser._id,
+    });
     try {
       await game.save();
       res.send("Game created successfully");
@@ -72,6 +79,38 @@ export class GameController {
     } catch (error) {
       console.log(error);
       res.status(500).send("Error updating game");
+    }
+  };
+
+  static drawNumber = async (req: Request, res: Response) => {
+    const { gameId } = req.body;
+    try {
+      const game = await Game.findById(gameId);
+      if (!game) {
+        const error = new Error("Game not found");
+        return res.status(404).json({ error: error.message });
+      }
+      if (game.active === false) {
+        const error = new Error("Game is not active");
+        return res.status(400).json({ error: error.message });
+      }
+
+      const { drawnNumbers, unsortedNumbers } = game;
+
+      const number = unsortedNumbers.pop();
+      drawnNumbers.push(number);
+      
+      if (unsortedNumbers.length === 0) {
+        game.active = false;
+        await game.save();
+        return res.json({ message: "Game Over" });
+      }
+
+      await game.save();
+      res.json({ number });
+    } catch (error) {
+      console.log(error);
+      res.status(500).send("Error drawing number");
     }
   };
 }

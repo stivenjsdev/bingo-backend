@@ -17,10 +17,10 @@ const io = new Server(server, {
 
 // Socket.io
 io.on("connection", (socket) => {
-  console.log("a user connected", socket.id);
+  console.log("a player connected", socket.id);
 
   socket.on("disconnect", () => {
-    console.log("user disconnected", socket.id);
+    console.log("player disconnected", socket.id);
   });
 
   // socket.on("message", msg => {

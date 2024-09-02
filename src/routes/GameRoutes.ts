@@ -19,6 +19,8 @@ router.post(
   GameController.createGame
 );
 
+// TODO: add adminAuthenticate middleware to all routes below
+
 router.get("/", GameController.getAllGames);
 
 router.get(
@@ -56,6 +58,14 @@ router.delete(
   param("id").isMongoId().withMessage("Invalid Game ID"),
   handleInputErrors,
   GameController.deleteGame
+);
+
+router.post(
+  "/draw-number",
+  adminAuthenticate,
+  body("gameId").isMongoId().withMessage("Invalid Game ID"),
+  handleInputErrors,
+  GameController.drawNumber
 );
 
 export default router;
