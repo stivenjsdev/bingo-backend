@@ -23,10 +23,10 @@ io.on("connection", (socket) => {
     console.log("player disconnected", socket.id);
   });
 
+  gameSocket(io, socket);
   // socket.on("message", msg => {
   //   console.log("message: " + msg);
   //   io.emit("received", "I received your message");
   // });
 });
 
-gameSocket(io);
