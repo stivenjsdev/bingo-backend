@@ -4,7 +4,8 @@ export type UserType = Document & {
   name: string;
   wpNumber: string;
   code: string;
-  bingoCard: number[];
+  bingoCard: number[][];
+  game: Schema.Types.ObjectId;
   active: boolean;
 };
 
@@ -31,7 +32,12 @@ const userSchema: Schema = new Schema<UserType>(
       unique: true,
     },
     bingoCard: {
-      type: [Number],
+      type: [[Number]],
+      required: true,
+    },
+    game: {
+      type: Schema.Types.ObjectId,
+      ref: "Game",
       required: true,
     },
     active: {

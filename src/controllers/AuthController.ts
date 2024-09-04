@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { User } from "../models/User";
 import { UserAdmin } from "../models/UserAdmin";
 import { comparePassword, hashPassword } from "../utils/auth";
+import { generateBingoCard, generateRandomFourDigitNumber } from "../utils/game";
 import { generateJWT } from "../utils/jwt";
 
 export class AuthController {
@@ -101,7 +102,7 @@ export class AuthController {
 
   static createPlayer = async (req: Request, res: Response) => {
     try {
-      const { name, wpNumber } = req.body;
+      const { name, wpNumber, gameId } = req.body;
 
       // Check if user already exists
       const userExists = await User.findOne({ wpNumber });
@@ -112,15 +113,13 @@ export class AuthController {
       }
 
       // Create a User
-      function generateRandomFourDigitNumber() {
-        return Math.floor(10000 + Math.random() * 90000);
-      }
       const userData = {
         name,
         wpNumber,
         code:
           name.substring(0, 3).toLowerCase() + generateRandomFourDigitNumber(),
-        bingoCard: [],
+        bingoCard: generateBingoCard(),
+        game: gameId,
         active: true,
       };
       const user = new User(userData);

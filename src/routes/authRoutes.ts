@@ -2,6 +2,7 @@ import { Router } from "express";
 import { body } from "express-validator";
 import { AuthController } from "../controllers/AuthController";
 import { authenticate } from "../middleware/auth";
+import { adminAuthenticate } from "../middleware/authAdmin";
 import { handleInputErrors } from "../middleware/validation";
 
 const router = Router();
@@ -46,9 +47,10 @@ router.get("/user", authenticate, AuthController.user);
 
 router.post(
   "/create-player",
-  // adminAuthenticate,
+  adminAuthenticate,
   body("name").notEmpty().withMessage("Name is required"),
   body("wpNumber").notEmpty().withMessage("WP Number is required"),
+  body("gameId").isMongoId().withMessage("Invalid Game ID"),
   handleInputErrors,
   AuthController.createPlayer
 );
