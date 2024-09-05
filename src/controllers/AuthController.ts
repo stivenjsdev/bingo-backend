@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { Game } from "../models/Game";
 import { User } from "../models/User";
 import { UserAdmin } from "../models/UserAdmin";
 import { comparePassword, hashPassword } from "../utils/auth";
@@ -112,6 +113,14 @@ export class AuthController {
         return res.status(409).json({ error: error.message });
       }
 
+      // Check if game exists
+      const game = await Game.findById(gameId);
+
+      if (!game) {
+        const error = new Error("Game not found");
+        return res.status(404).json({ error: error.message });
+      }
+
       // Create a User
       const userData = {
         name,
@@ -124,10 +133,13 @@ export class AuthController {
       };
       const user = new User(userData);
 
+      // Add user to game
+      game.players.push(user.id);
+
       // Hash code // TODO: Implement this
       // user.password = await hashPassword(password);
 
-      await user.save();
+      await Promise.allSettled([user.save(), game.save()])
 
       res.send("Player created successfully");
     } catch (error) {

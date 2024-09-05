@@ -38,3 +38,13 @@ export function generateBingoCard(): number[] {
   bingoCard.push(getRandomNumbers(61, 75, 5)); // 5 números del 61 al 75
   return bingoCard;
 }
+
+export function validateWinner(
+  bingoCard: number[][],
+  drawnNumbers: number[]
+): boolean {
+  const drawnNumbersWithZero = [...drawnNumbers, 0];
+  return bingoCard.every((subArray) =>
+    subArray.every((num) => drawnNumbersWithZero.includes(num))
+  );
+}
