@@ -95,10 +95,10 @@ export class GameController {
         return res.status(400).json({ error: error.message });
       }
 
-      const { drawnNumbers, unsortedNumbers } = game;
+      const { chosenNumbers, unsortedNumbers } = game;
 
       const number = unsortedNumbers.pop();
-      drawnNumbers.push(number);
+      chosenNumbers.push(number);
       
       if (unsortedNumbers.length === 0) {
         game.active = false;

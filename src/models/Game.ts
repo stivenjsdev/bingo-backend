@@ -8,7 +8,7 @@ export type GameType = Document & {
   players: UserType[];
   winner: string;
   unsortedNumbers: number[];
-  drawnNumbers: number[];
+  chosenNumbers: number[];
   userAdmin: Schema.Types.ObjectId | UserAdminType;
   active: boolean;
 };
@@ -39,7 +39,7 @@ const GameSchema: Schema = new Schema<GameType>(
       type: [Number],
       required: true,
     },
-    drawnNumbers: {
+    chosenNumbers: {
       type: [Number],
       default: [],
     },

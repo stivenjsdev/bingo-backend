@@ -13,7 +13,7 @@ export const gameSocket = (io: Server, socket: Socket) => {
         // return;
       }
       socket.join(gameId);
-      socket.emit("joined game", game.drawnNumbers);
+      socket.emit("joined game", game.chosenNumbers);
       console.log("player joined game", gameId);
     } catch (error) {
       // TODO: emit a generic error event to the player(socket)
@@ -21,40 +21,37 @@ export const gameSocket = (io: Server, socket: Socket) => {
     }
   });
 
-  // Draw a ball
-  socket.on("draw ball", async (gameId) => {
+  // Take out the ball
+  socket.on("takeOut ball", async (gameId) => {
     try {
+      console.log("take out ball");
       const game = await Game.findById(gameId);
       // TODO: emit a error and validate in frontend
       if (!game) {
-        const error = new Error("drawn ball - Game not found");
+        const error = new Error("take out ball - Game not found");
         throw error;
         // return;
       }
       if (game.active === false) {
-        const error = new Error("drawn ball - Game is not active");
+        const error = new Error("take out ball - Game is not active");
         throw error;
         // return;
       }
-
-      const { drawnNumbers, unsortedNumbers } = game;
-
-      const number = unsortedNumbers.pop();
-      drawnNumbers.push(number);
-
+      
+      const { chosenNumbers, unsortedNumbers } = game;
+      
       if (unsortedNumbers.length === 0) {
-        game.active = false;
-        await game.save();
-        // TODO: emit a game over event to all players and adminUser.
-        //TODO: emit a error message to adminUser
-        return;
+        const error = new Error("take out ball - There are no more balls to take out");
+        throw error;
       }
+      const number = unsortedNumbers.pop();
+      chosenNumbers.push(number);
 
       await game.save();
-      console.log("ball drawn", number);
+      console.log("ball taken out", number);
       console.log("remaining balls", unsortedNumbers.length);
       console.log("---");
-      io.to(gameId).emit("ball drawn", number, drawnNumbers);
+      io.to(gameId).emit("ball taken out", number, chosenNumbers);
     } catch (error) {
       console.log(error);
       // TODO: emit a generic error event to the player(socket)
@@ -71,9 +68,10 @@ export const gameSocket = (io: Server, socket: Socket) => {
         // return;
       }
       // game.active = false;
-      game.drawnNumbers = [];
+      game.chosenNumbers = [];
       game.unsortedNumbers = generateUnsortedNumbers(75);
       game.active = true;
+      delete game.winner
       await game.save();
       io.to(gameId).emit("game restarted");
       console.log("reset game", gameId);
@@ -104,7 +102,7 @@ export const gameSocket = (io: Server, socket: Socket) => {
         // return;
       }
       console.log("bingo!", player.name);
-      const win = validateWinner(player.bingoCard, game.drawnNumbers);
+      const win = validateWinner(player.bingoCard, game.chosenNumbers);
       if (win) {
         game.winner = player.id;
         game.active = false;

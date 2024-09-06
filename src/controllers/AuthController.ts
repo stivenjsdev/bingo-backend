@@ -25,18 +25,7 @@ export class AuthController {
       // Hash Password
       user.password = await hashPassword(password);
 
-      // Generate a verification token
-      // const token = new Token();
-      // token.token = generateToken();
-      // token.user = user.id;
-
-      // await Promise.allSettled([user.save(), token.save()]);
-
       await user.save();
-
-      // res.send(
-      //   "Account created successfully, check your email to verify your account"
-      // );
       res.send("Admin Account created successfully");
     } catch (error) {
       res.status(500).json({ error: error.message });

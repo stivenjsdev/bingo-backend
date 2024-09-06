@@ -41,10 +41,10 @@ export function generateBingoCard(): number[] {
 
 export function validateWinner(
   bingoCard: number[][],
-  drawnNumbers: number[]
+  chosenNumbers: number[]
 ): boolean {
-  const drawnNumbersWithZero = [...drawnNumbers, 0];
+  const chosenNumbersWithZero = [...chosenNumbers, 0];
   return bingoCard.every((subArray) =>
-    subArray.every((num) => drawnNumbersWithZero.includes(num))
+    subArray.every((num) => chosenNumbersWithZero.includes(num))
   );
 }
