@@ -2,6 +2,13 @@ import { Server, Socket } from "socket.io";
 import { Game } from "../models/Game";
 import { generateUnsortedNumbers, validateWinner } from "../utils/game";
 
+export type SweetAlertIcon =
+  | "success"
+  | "error"
+  | "warning"
+  | "info"
+  | "question";
+
 export const gameSocket = (io: Server, socket: Socket) => {
   // Join a room game
   socket.on("join game", async (gameId) => {
@@ -13,7 +20,7 @@ export const gameSocket = (io: Server, socket: Socket) => {
         // return;
       }
       socket.join(gameId);
-      socket.emit("joined game", game.chosenNumbers);
+      socket.emit("joined game", game.chosenNumbers, game.date);
       console.log("player joined game", gameId);
     } catch (error) {
       // TODO: emit a generic error event to the player(socket)
@@ -37,11 +44,13 @@ export const gameSocket = (io: Server, socket: Socket) => {
         throw error;
         // return;
       }
-      
+
       const { chosenNumbers, unsortedNumbers } = game;
-      
+
       if (unsortedNumbers.length === 0) {
-        const error = new Error("take out ball - There are no more balls to take out");
+        const error = new Error(
+          "take out ball - There are no more balls to take out"
+        );
         throw error;
       }
       const number = unsortedNumbers.pop();
@@ -68,10 +77,10 @@ export const gameSocket = (io: Server, socket: Socket) => {
         // return;
       }
       // game.active = false;
+      delete game.winner;
       game.chosenNumbers = [];
       game.unsortedNumbers = generateUnsortedNumbers(75);
       game.active = true;
-      delete game.winner
       await game.save();
       io.to(gameId).emit("game restarted");
       console.log("reset game", gameId);
@@ -111,7 +120,10 @@ export const gameSocket = (io: Server, socket: Socket) => {
         console.log("winner!", player.name);
       } else {
         console.log("not a winner", player.name);
-        // todo: emit a error message to all players
+        const message: string =
+          "Un jugador ha cantado bingo, pero no ha ganado, el juego continuará";
+        const icon: SweetAlertIcon = "error";
+        io.to(gameId).emit("message", message, icon);
       }
     } catch (error) {
       console.log(error);
