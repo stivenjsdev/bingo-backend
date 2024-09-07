@@ -7,6 +7,7 @@ import { handleInputErrors } from "../middleware/validation";
 
 const router = Router();
 
+// Admin routes
 router.post(
   "/admin/create-account",
   body("username").notEmpty().withMessage("Username is required"),
@@ -33,6 +34,19 @@ router.post(
 );
 
 router.post(
+  "/create-player",
+  adminAuthenticate,
+  body("name").notEmpty().withMessage("Name is required"),
+  body("wpNumber").notEmpty().withMessage("WP Number is required"),
+  body("gameId").isMongoId().withMessage("Invalid Game ID"),
+  handleInputErrors,
+  AuthController.createPlayer
+);
+
+router.get("/admin/user", adminAuthenticate, AuthController.adminUser);
+
+// Player routes
+router.post(
   "/login",
   body("code")
     .notEmpty()
@@ -44,15 +58,5 @@ router.post(
 );
 
 router.get("/user", authenticate, AuthController.user);
-
-router.post(
-  "/create-player",
-  adminAuthenticate,
-  body("name").notEmpty().withMessage("Name is required"),
-  body("wpNumber").notEmpty().withMessage("WP Number is required"),
-  body("gameId").isMongoId().withMessage("Invalid Game ID"),
-  handleInputErrors,
-  AuthController.createPlayer
-);
 
 export default router;

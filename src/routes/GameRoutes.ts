@@ -21,7 +21,7 @@ router.post(
 
 // TODO: add adminAuthenticate middleware to all routes below
 
-router.get("/", GameController.getAllGames);
+router.get("/", adminAuthenticate, GameController.getAllGames);
 
 router.get(
   "/:id",

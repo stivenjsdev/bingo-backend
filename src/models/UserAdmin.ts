@@ -26,6 +26,7 @@ const userAdminSchema: Schema = new Schema<UserAdminType>(
       required: true,
       trim: true,
     },
+    // todo: We need to confirm the user if we dont use token?
     confirmed: {
       type: Boolean,
       default: false,
