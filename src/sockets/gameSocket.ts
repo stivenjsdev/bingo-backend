@@ -253,7 +253,6 @@ export const gameSocket = (io: Server, socket: Socket) => {
         throw error;
       }
       // create player
-      // Create a User
       const playerData = {
         name: newPlayer.name,
         wpNumber: newPlayer.wpNumber,
@@ -279,6 +278,40 @@ export const gameSocket = (io: Server, socket: Socket) => {
     } catch (error) {
       console.log(error);
       socket.emit("player-created", null, error.message);
+    }
+  });
+
+  // Delete Player
+  socket.on("delete-player", async (token, playerId, gameId) => {
+    // socket.emit("player-deleted", game, message);
+    console.log("delete-player");
+    try {
+      const user = await authenticateSocket(token);
+      if (!user) {
+        const error = new Error("delete-player - Unauthorized User not found");
+        throw error;
+      }
+      const game = await Game.findById(gameId)
+        .populate("players")
+        .populate("winner");
+      if (!game) {
+        const error = new Error("delete-player - Game not found");
+        throw error;
+      }
+      const player = game.players.find((player) => player.id === playerId);
+      if (!player) {
+        const error = new Error("delete-player - Player not found in game");
+        throw error;
+      }
+      const playerIndex = game.players.findIndex(
+        (player) => player.id === playerId
+      );
+      game.players.splice(playerIndex, 1);
+      await Promise.allSettled([User.findByIdAndDelete(playerId), game.save()]);
+      io.to(gameId).emit("player-deleted", game, "player deleted successfully");
+    } catch (error) {
+      console.log(error);
+      socket.emit("player-deleted", null, error.message);
     }
   });
 };
