@@ -57,7 +57,10 @@ export const gameSocket = (io: Server, socket: Socket) => {
       socket.emit("joined-game", game);
       console.log("player joined game", gameId);
     } catch (error) {
-      // todo: emit a generic error event to the player(socket) updated: maybe this is not necessary
+      const message =
+        "No has podido unirte a la juego, por favor intenta de nuevo";
+      const icon: SweetAlertIcon = "error";
+      socket.emit("message", message, icon);
       console.log(error);
     }
   });
