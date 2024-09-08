@@ -1,12 +1,12 @@
 import mongoose, { Document, Schema } from "mongoose";
-import { UserType } from "./User";
+import type { UserType } from "./User";
 import type { UserAdminType } from "./UserAdmin";
 
 export type GameType = Document & {
   gameName: string;
   date: Date;
   players: UserType[];
-  winner: string;
+  winner?: UserType;
   unsortedNumbers: number[];
   chosenNumbers: number[];
   userAdmin: Schema.Types.ObjectId | UserAdminType;
@@ -27,13 +27,13 @@ const GameSchema: Schema = new Schema<GameType>(
     },
     players: [
       {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: "User",
       },
     ],
     winner: {
-      type: String,
-      trim: true,
+      type: Schema.Types.ObjectId,
+      ref: "User",
     },
     unsortedNumbers: {
       type: [Number],

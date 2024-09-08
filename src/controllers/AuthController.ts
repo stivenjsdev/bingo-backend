@@ -95,12 +95,13 @@ export class AuthController {
       const { name, wpNumber, gameId } = req.body;
 
       // Check if user already exists
-      const userExists = await User.findOne({ wpNumber });
+      // this is not necessary now
+      // const userExists = await User.findOne({ wpNumber });
 
-      if (userExists) {
-        const error = new Error("User already exists");
-        return res.status(409).json({ error: error.message });
-      }
+      // if (userExists) {
+      //   const error = new Error("User already exists");
+      //   return res.status(409).json({ error: error.message });
+      // }
 
       // Check if game exists
       const game = await Game.findById(gameId);
@@ -109,6 +110,8 @@ export class AuthController {
         const error = new Error("Game not found");
         return res.status(404).json({ error: error.message });
       }
+
+      // todo: validate if player exists in game
 
       // Create a User
       const userData = {

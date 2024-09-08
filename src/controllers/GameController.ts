@@ -34,7 +34,7 @@ export class GameController {
   static getGameById = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
-      const game = await Game.findById(id);
+      const game = await Game.findById(id).populate("players");
 
       if (!game) {
         const error = new Error("Game not found");

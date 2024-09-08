@@ -21,7 +21,6 @@ const userSchema: Schema = new Schema<UserType>(
       type: String,
       required: true,
       trim: true,
-      unique: true,
     },
     code: {
       type: String,
@@ -40,6 +39,7 @@ const userSchema: Schema = new Schema<UserType>(
       ref: "Game",
       required: true,
     },
+    // todo: validate if is necessary the active property
     active: {
       type: Boolean,
       default: true,
