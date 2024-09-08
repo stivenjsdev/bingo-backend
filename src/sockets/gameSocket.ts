@@ -62,9 +62,9 @@ export const gameSocket = (io: Server, socket: Socket) => {
     }
   });
 
-  socket.on('leaveRoom', (room) => {
+  socket.on("leaveRoom", (room) => {
     socket.leave(room);
-    console.log(`Cliente ${socket.id} ha dejado la sala ${room}`);
+    console.log(`client ${socket.id}  has leave the room ${room}`);
   });
 
   // Take out the ball
@@ -268,8 +268,7 @@ export const gameSocket = (io: Server, socket: Socket) => {
       // Add user to game
       game.players.push(player);
 
-      await Promise.allSettled([player.save(), game.save()]);
-      console.log(game.players);
+      await Promise.all([player.save(), game.save()]);
       io.to(newPlayer.gameId).emit(
         "player-created",
         game,
@@ -307,11 +306,46 @@ export const gameSocket = (io: Server, socket: Socket) => {
         (player) => player.id === playerId
       );
       game.players.splice(playerIndex, 1);
-      await Promise.allSettled([User.findByIdAndDelete(playerId), game.save()]);
+      await Promise.all([User.findByIdAndDelete(playerId), game.save()]);
       io.to(gameId).emit("player-deleted", game, "player deleted successfully");
     } catch (error) {
       console.log(error);
       socket.emit("player-deleted", null, error.message);
+    }
+  });
+
+  // Delete Game
+  socket.on("delete-game", async (token, gameId) => {
+    // socket.emit("game-deleted", games, message);
+    console.log("delete-game");
+    try {
+      const user = await authenticateSocket(token);
+      if (!user) {
+        const error = new Error("delete-game - Unauthorized User not found");
+        throw error;
+      }
+      const game = await Game.findById(gameId)
+        .populate("players")
+        .populate("winner");
+      if (!game) {
+        const error = new Error("delete-game - Game not found");
+        throw error;
+      }
+      // delete game and all players
+      for (const player of game.players) {
+        await User.findByIdAndDelete(player.id);
+        console.log("deleted player", player.name);
+      }
+
+      // delete game
+      await Game.findByIdAndDelete(gameId);
+
+      // get all games
+      const games = await Game.find({});
+      socket.emit("game-deleted", games, "game deleted successfully");
+    } catch (error) {
+      console.log(error);
+      socket.emit("game-deleted", null, error.message);
     }
   });
 };
