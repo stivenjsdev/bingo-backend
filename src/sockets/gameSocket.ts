@@ -351,4 +351,43 @@ export const gameSocket = (io: Server, socket: Socket) => {
       socket.emit("game-deleted", null, error.message);
     }
   });
+
+  socket.on("change-card", async (token, playerId, gameId) => {
+    // socket.emit("card-changed", game, player, message);
+    console.log("change-card");
+    try {
+      const user = await authenticateSocket(token);
+      if (!user) {
+        const error = new Error("delete-game - Unauthorized User not found");
+        throw error;
+      }
+      const player = await User.findByIdAndUpdate(
+        playerId,
+        {
+          bingoCard: generateBingoCard(),
+        },
+        { new: true }
+      );
+      if (!player) {
+        const error = new Error("change-card - Player not found");
+        throw error;
+      }
+      const game = await Game.findById(gameId)
+        .populate("players")
+        .populate("winner");
+      if (!game) {
+        const error = new Error("change-card - Game not found");
+        throw error;
+      }
+      io.to(gameId).emit(
+        "card-changed",
+        game,
+        player,
+        "card changed successfully"
+      );
+    } catch (error) {
+      console.log(error);
+      socket.emit("card-changed", null, null, error.message);
+    }
+  });
 };
