@@ -17,11 +17,7 @@ const io = new Server(server, {
 
 // Socket.io
 io.on("connection", (socket) => {
-  console.log("a player connected", socket.id);
-
-  socket.on("disconnect", () => {
-    console.log("player disconnected", socket.id);
-  });
+  console.log("User connected socketid:", socket.id);
 
   gameSocket(io, socket);
   // socket.on("message", msg => {

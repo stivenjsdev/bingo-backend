@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import { Server, Socket } from "socket.io";
 import { Game } from "../models/Game";
-import { User } from "../models/User";
+import { User, UserType } from "../models/User";
 import { UserAdmin } from "../models/UserAdmin";
 import {
   generateBingoCard,
@@ -42,28 +42,62 @@ const authenticateSocket = async (token: string) => {
 };
 
 export const gameSocket = (io: Server, socket: Socket) => {
-  // Join a room game
-  socket.on("join-game", async (gameId) => {
-    try {
-      const game = await Game.findById(gameId)
+  // Socket disconnection
+  socket.on("disconnect", async () => {
+    console.log("Player disconnected", socket.id);
+    // find player by socket id
+    const player = await User.findOne({ socketId: socket.id });
+    if (player) {
+      // set player offline
+      player.online = false;
+      player.socketId = undefined;
+      await player.save();
+      // get game with updated players
+      const game = await Game.findById(player.game)
         .populate("players")
         .populate("winner");
-      if (!game) {
-        const error = new Error("join game - Game not found");
-        throw error;
-        // return;
+      if (game && game.id) {
+        // emit player disconnected
+        io.to(game.id).emit("player-disconnected", game);
       }
-      socket.join(gameId);
-      socket.emit("joined-game", game);
-      console.log("player joined game", gameId);
-    } catch (error) {
-      const message =
-        "No has podido unirte a la juego, por favor intenta de nuevo";
-      const icon: SweetAlertIcon = "error";
-      socket.emit("message", message, icon);
-      console.log(error);
     }
   });
+
+  // Join a room game
+  socket.on(
+    "join-game",
+    async (gameId: string, playerId: UserType["_id"] | null) => {
+      try {
+        // join room
+        socket.join(gameId);
+        // if playerId is null, it means the user is the admin/host
+        if (playerId) {
+          // set player online
+          await User.findByIdAndUpdate(playerId, {
+            online: true,
+            socketId: socket.id,
+          });
+          // get game
+          const game = await Game.findById(gameId)
+            .populate("players")
+            .populate("winner");
+          if (!game) {
+            const error = new Error("join game - Game not found");
+            throw error;
+          }
+          io.to(gameId).emit("player-joined-game", game);
+        }
+        socket.emit("joined-game");
+        console.log("User has joined the game room:", gameId, socket.id);
+      } catch (error) {
+        const message =
+          "No has podido unirte a la juego, por favor intenta de nuevo";
+        const icon: SweetAlertIcon = "error";
+        socket.emit("message", message, icon);
+        console.log(error);
+      }
+    }
+  );
 
   socket.on("leaveRoom", (room) => {
     socket.leave(room);

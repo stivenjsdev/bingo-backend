@@ -28,7 +28,9 @@ export const authenticate = async (
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     if (typeof decoded === "object" && decoded.id) {
-      const user = await User.findById(decoded.id).select("_id name bingoCard game active");
+      const user = await User.findById(decoded.id)
+        .select("_id name bingoCard game active")
+        .populate("game");
       if (!user) {
         const error = new Error("Invalid Token");
         return res.status(401).json({ error: error.message });

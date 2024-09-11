@@ -7,6 +7,8 @@ export type UserType = Document & {
   bingoCard: number[][];
   game: Schema.Types.ObjectId;
   active: boolean;
+  online: boolean;
+  socketId: string | null;
 };
 
 const userSchema: Schema = new Schema<UserType>(
@@ -39,13 +41,20 @@ const userSchema: Schema = new Schema<UserType>(
       ref: "Game",
       required: true,
     },
-    // todo: validate if is necessary the active property
     active: {
       type: Boolean,
       default: true,
+    },
+    online: {
+      type: Boolean,
+      default: false,
+    },
+    socketId: {
+      type: String,
     },
   },
   { timestamps: true }
 );
 
+// Player schema
 export const User = mongoose.model<UserType>("User", userSchema);
