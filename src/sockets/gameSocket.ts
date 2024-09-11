@@ -4,6 +4,7 @@ import { Game } from "../models/Game";
 import { User, UserType } from "../models/User";
 import { UserAdmin } from "../models/UserAdmin";
 import {
+  capitalizeWords,
   generateBingoCard,
   generateRandomFourDigitNumber,
   generateUnsortedNumbers,
@@ -210,7 +211,7 @@ export const gameSocket = (io: Server, socket: Socket) => {
       } else {
         console.log("not a winner", player.name);
         const message: string =
-          "Un jugador ha cantado bingo, pero no ha ganado, el juego continuará";
+          `${capitalizeWords(player.name)} ha cantado bingo, pero no ha completado el cartón.`;
         const icon: SweetAlertIcon = "error";
         io.to(gameId).emit("message", message, icon);
       }

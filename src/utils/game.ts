@@ -48,3 +48,12 @@ export function validateWinner(
     subArray.every((num) => chosenNumbersWithZero.includes(num))
   );
 }
+
+export function capitalizeWords(str: string) {
+  return str
+    .split(" ")
+    .reduce((acc, word) => {
+      return acc + " " + word.charAt(0).toUpperCase() + word.slice(1);
+    }, "")
+    .trim();
+}
