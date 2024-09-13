@@ -30,7 +30,7 @@ export const authenticate = async (
     if (typeof decoded === "object" && decoded.id) {
       const user = await User.findById(decoded.id)
         .select("_id name bingoCard game active")
-        .populate("game");
+        .populate({ path: "game", populate: { path: "winner", model: "User" } });
       if (!user) {
         const error = new Error("Invalid Token");
         return res.status(401).json({ error: error.message });
