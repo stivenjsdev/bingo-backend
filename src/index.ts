@@ -2,7 +2,7 @@ import colors from "colors";
 import { Server } from "socket.io";
 import { corsConfig } from "./config/cors";
 import app from "./server";
-import { gameSocket } from "./sockets/gameSocket";
+import { gameHandler } from "./socketHandlers/gameHandler";
 
 const port = process.env.PORT || 4000;
 
@@ -17,9 +17,9 @@ const io = new Server(server, {
 
 // Socket.io
 io.on("connection", (socket) => {
-  console.log("User connected socketid:", socket.id);
+  console.log("User connected socketId:", socket.id);
 
-  gameSocket(io, socket);
+  gameHandler(io, socket);
   // socket.on("message", msg => {
   //   console.log("message: " + msg);
   //   io.emit("received", "I received your message");

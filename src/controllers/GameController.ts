@@ -4,7 +4,7 @@ import { generateUnsortedNumbers } from "../utils/game";
 
 export class GameController {
   static createGame = async (req: Request, res: Response) => {
-    console.log(req.adminUser);
+    console.log("GameController.createGame: ", req.body);
     // generate a list of unsorted numbers from 1 to 75
     const unsortedNumbers = generateUnsortedNumbers(75);
     const game = new Game({
