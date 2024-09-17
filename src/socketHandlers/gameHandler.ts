@@ -1,6 +1,4 @@
-import jwt from "jsonwebtoken";
 import { Server, Socket } from "socket.io";
-import { UserAdmin } from "../models/UserAdmin";
 import { GameService } from "../services/gameService";
 import { capitalizeWords } from "../utils/game";
 
@@ -11,37 +9,12 @@ export type SweetAlertIcon =
   | "info"
   | "question";
 
-const authenticateSocket = async (token: string) => {
-  try {
-    if (!token) {
-      const error = new Error("Unauthorized");
-      throw error;
-    }
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    if (typeof decoded === "object" && decoded.id) {
-      const user = await UserAdmin.findById(decoded.id).select(
-        "_id username email"
-      );
-      if (!user) {
-        const error = new Error("User not found");
-        throw error;
-      }
-
-      return user;
-    }
-  } catch (error) {
-    console.error(error);
-  }
-};
-
 export const gameHandler = (io: Server, socket: Socket) => {
   // Socket disconnection
   socket.on("disconnect", async () => {
     try {
       console.log("disconnect handler", socket.id);
       const gameState = await GameService.disconnectPlayer(socket.id);
-      // io.to(game.id).emit("player-disconnected", game);
       // if gameState is null, it means the user is admin/host. it is not necessary to do anything
       if (!gameState) return;
       // emit to dashboard and players to update selected game
@@ -65,7 +38,6 @@ export const gameHandler = (io: Server, socket: Socket) => {
         socket.id
       );
 
-      // io.to(gameId).emit("player-joined-game", gameState);
       // emit to dashboard and player to update selected game
       io.to(gameId).emit("gameUpdate", gameState);
 
@@ -94,16 +66,9 @@ export const gameHandler = (io: Server, socket: Socket) => {
   });
 
   // Take out the ball
-  // socket.on("takeBallOut", async (token, gameId) => {
   socket.on("takeBallOut", async (gameId: string) => {
     console.log("takeBallOut handler", gameId);
     try {
-      // const user = await authenticateSocket(token);
-      // if (!user) {
-      //   const error = new Error("get-game - Unauthorized User not found");
-      //   throw error;
-      // }
-
       const { game: gameState, number: ball } = await GameService.takeBallOut(
         gameId
       );
@@ -131,15 +96,9 @@ export const gameHandler = (io: Server, socket: Socket) => {
   });
 
   // Reset game
-  // socket.on("reset-game", async (token, gameId) => {
   socket.on("resetGame", async (gameId: string) => {
     try {
       console.log("resetGame handler", gameId);
-      // const user = await authenticateSocket(token);
-      // if (!user) {
-      //   const error = new Error("get-game - Unauthorized User not found");
-      //   throw error;
-      // }
 
       const gameState = await GameService.resetGame(gameId);
 
@@ -189,17 +148,10 @@ export const gameHandler = (io: Server, socket: Socket) => {
   });
 
   // Get Games
-  // socket.on("getGames", async (token) => {
   socket.on("getGames", async () => {
     // socket.emit("games", games);
     try {
       console.log("getGames handler");
-      // const user = await authenticateSocket(token);
-      // if (!user) {
-      //   const error = new Error("get-games - Unauthorized User not found");
-      //   throw error;
-      // }
-      // const games = await Game.find({ userAdmin: userId });
       const games = await GameService.getGames();
       socket.emit("games", games);
     } catch (error) {
@@ -211,16 +163,10 @@ export const gameHandler = (io: Server, socket: Socket) => {
   });
 
   // Get Games By Id
-  // socket.on("getGame", async (token, gameId) => {
   socket.on("getGame", async (gameId: string) => {
     // socket.emit("game", game);
     try {
       console.log("getGame handler", gameId);
-      // const user = await authenticateSocket(token);
-      // if (!user) {
-      //   const error = new Error("get-game - Unauthorized User not found");
-      //   throw error;
-      // }
       const game = await GameService.getGame(gameId);
       if (!game) {
         console.log("getGame: Game not found");
@@ -240,19 +186,12 @@ export const gameHandler = (io: Server, socket: Socket) => {
   });
 
   // Create Player
-  // socket.on("createPlayer", async (token, newPlayer) => {
   socket.on(
     "createPlayer",
     async (newPlayer: { name: string; wpNumber: string; gameId: string }) => {
       // socket.emit("player created", game);
       try {
         console.log("createPlayer handler", newPlayer);
-        // const user = await authenticateSocket(token);
-        // validate authentication
-        // if (!user) {
-        //   const error = new Error("create-player - Unauthorized User not found");
-        //   throw error;
-        // }
 
         const gameState = await GameService.createPlayer(newPlayer);
         if (!gameState) {
@@ -275,16 +214,10 @@ export const gameHandler = (io: Server, socket: Socket) => {
   );
 
   // Delete Player
-  // socket.on("delete-player", async (token, playerId, gameId) => {
   socket.on("deletePlayer", async (playerId: string, gameId: string) => {
     // socket.emit("playerDeleted", game);
     try {
       console.log("deletePlayer handler", playerId, gameId);
-      // const user = await authenticateSocket(token);
-      // if (!user) {
-      //   const error = new Error("delete-player - Unauthorized User not found");
-      //   throw error;
-      // }
 
       const gameState = await GameService.deletePlayer(playerId, gameId);
       if (!gameState) {
@@ -309,16 +242,10 @@ export const gameHandler = (io: Server, socket: Socket) => {
   });
 
   // Delete Game
-  // socket.on("delete-game", async (token, gameId) => {
   socket.on("deleteGame", async (gameId) => {
-    // socket.emit("game-deleted", games, message);
+    // socket.emit("game-deleted", games);
     try {
       console.log("deleteGame handler", gameId);
-      // const user = await authenticateSocket(token);
-      // if (!user) {
-      //   const error = new Error("delete-game - Unauthorized User not found");
-      //   throw error;
-      // }
       const gamesState = await GameService.deleteGame(gameId);
       if (!gamesState) {
         const message =
@@ -336,16 +263,11 @@ export const gameHandler = (io: Server, socket: Socket) => {
     }
   });
 
-  // socket.on("changeCard", async (token, playerId, gameId) => {
+  // Change Card
   socket.on("changeCard", async (playerId, gameId) => {
-    // socket.emit("card-changed", game, player, message);
+    // socket.emit("cardChanged", player);
     try {
       console.log("changeCard handler", playerId, gameId);
-      // const user = await authenticateSocket(token);
-      // if (!user) {
-      //   const error = new Error("delete-game - Unauthorized User not found");
-      //   throw error;
-      // }
 
       const { game: gameState, player } = await GameService.changeCard(
         playerId,
