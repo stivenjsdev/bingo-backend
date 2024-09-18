@@ -277,7 +277,7 @@ export class GameService {
           bingoCard: generateBingoCard(),
         },
         { new: true }
-      );
+      ).populate("game");
       // validate if player exists
       if (!player) {
         console.log("GameService.changeCard: Player not found");
