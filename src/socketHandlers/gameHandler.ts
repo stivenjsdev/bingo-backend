@@ -281,11 +281,14 @@ export const gameHandler = (io: Server, socket: Socket) => {
         return;
       }
 
+      // emit to the player the updated card
       io.to(gameId).emit("cardChanged", player);
+      // emit to all users the updated game state
       io.to(gameId).emit("gameUpdate", gameState);
 
       const message = `El cartón de ${player.name} ha sido cambiado exitosamente`;
       const icon: SweetAlertIcon = "success";
+      // message emitted to the player who changed the card
       socket.emit("message", message, icon);
     } catch (error) {
       console.log(error);
