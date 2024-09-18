@@ -41,7 +41,6 @@ export const gameHandler = (io: Server, socket: Socket) => {
       // emit to dashboard and player to update selected game
       io.to(gameId).emit("gameUpdate", gameState);
 
-      // todo: maybe the welcome message should be run always when a player joins the game
       // emit to player to welcome message.
       socket.emit("joinedGame");
       console.log("User has joined the game room:", gameId, socket.id);
