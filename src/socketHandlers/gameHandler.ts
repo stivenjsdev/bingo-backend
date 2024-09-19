@@ -87,7 +87,6 @@ export const gameHandler = (io: Server, socket: Socket) => {
       }
     } catch (error) {
       console.log(error);
-      // io.to(gameId).emit("ballTakenOut", null, error.message);
       const message = "Error al tomar la balota, por favor intente de nuevo";
       const icon: SweetAlertIcon = "error";
       socket.emit("message", message, icon);
