@@ -12,6 +12,8 @@ const server = app.listen(port, () => {
 
 const io = new Server(server, {
   cors: corsConfig,
+  pingTimeout: 60000, // if user is not active for 60 seconds, disconnect
+  connectTimeout: 60000, // wait 60 seconds for the connection to be established
   // connectionStateRecovery: {},
 });
 
