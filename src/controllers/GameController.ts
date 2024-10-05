@@ -1,18 +1,14 @@
 import type { Request, Response } from "express";
 import { Game } from "../models/Game";
-import { generateUnsortedNumbers } from "../utils/game";
 
 export class GameController {
   static createGame = async (req: Request, res: Response) => {
     console.log("GameController.createGame: ", req.body);
-    // generate a list of unsorted numbers from 1 to 75
-    const unsortedNumbers = generateUnsortedNumbers(75);
-    const game = new Game({
-      ...req.body,
-      unsortedNumbers,
-      userAdmin: req.adminUser._id,
-    });
     try {
+      const game = new Game({
+        ...req.body,
+        userAdmin: req.adminUser._id,
+      });
       await game.save();
       res.send("Game created successfully");
     } catch (error) {
@@ -95,12 +91,12 @@ export class GameController {
         return res.status(400).json({ error: error.message });
       }
 
-      const { chosenNumbers, unsortedNumbers } = game;
+      const { drawnBalls, balls } = game;
 
-      const number = unsortedNumbers.pop();
-      chosenNumbers.push(number);
+      const number = balls.pop();
+      drawnBalls.push(number);
       
-      if (unsortedNumbers.length === 0) {
+      if (balls.length === 0) {
         game.active = false;
         await game.save();
         return res.json({ message: "Game Over" });

@@ -1,12 +1,13 @@
+import { Schema } from "mongoose";
 import { Socket } from "socket.io";
 import { Game } from "../models/Game";
 import { User } from "../models/User";
 import {
-  generateBingoCard,
-  generateRandomFourDigitNumber,
-  generateUnsortedNumbers,
-  validateWinner,
-} from "../utils/game";
+  CornersStrategy,
+  DiagonalStrategy,
+  FrameStrategy,
+  FullCardStrategy,
+} from "../models/WinningStrategy";
 
 export class GameService {
   static disconnectPlayer = async (socketId: Socket["id"]) => {
@@ -16,13 +17,10 @@ export class GameService {
       // if player does not exist, it means user is admin/host. it is not necessary to do anything
       if (player) {
         // set player offline
-        player.online = false;
-        player.socketId = undefined;
+        player.setOffline();
         await player.save();
         // get game with updated players
-        const game = await Game.findById(player.game)
-          .populate("players")
-          .populate("winner");
+        const game = await this.getGame(player.game);
         if (!game) {
           console.log("GameService.disconnectPlayer: Game not found");
         }
@@ -43,14 +41,15 @@ export class GameService {
       // if playerId is null, it means the user is the admin/host. it is not necessary to do anything
       if (playerId) {
         // set player online
-        await User.findByIdAndUpdate(playerId, {
-          online: true,
-          socketId: socketId,
-        });
+        const player = await this.getPlayer(playerId);
+        if (!player) {
+          console.log("GameService.joinPlayerToGame: Player not found");
+          return;
+        }
+        player.setOnline(socketId);
+        await player.save();
         // get updated game
-        const game = await Game.findById(gameId)
-          .populate("players")
-          .populate("winner");
+        const game = await this.getGame(gameId);
         if (!game) {
           console.log("GameService.joinPlayerToGame: Game not found");
         }
@@ -65,23 +64,12 @@ export class GameService {
   static takeBallOut = async (gameId: string) => {
     try {
       // get game
-      const game = await Game.findById(gameId)
-        .populate("players")
-        .populate("winner");
-      // validate if game exists, is active and has balls to take out
+      const game = await this.getGame(gameId);
       if (!game) {
         console.log("GameService.takeBallOut: Game not found");
+        return;
       }
-      if (game.active === false) {
-        console.log("GameService.takeBallOut: Game is not active");
-      }
-      if (game.unsortedNumbers.length === 0) {
-        console.log("GameService.takeBallOut: All balls are out");
-      }
-      // take number out
-      const number = game.unsortedNumbers.pop();
-      // push taken number to chosen numbers
-      game.chosenNumbers.push(number);
+      const number = game.drawBall();
       // save game
       await game.save();
       // return game
@@ -94,18 +82,14 @@ export class GameService {
   static resetGame = async (gameId: string) => {
     try {
       // get game
-      const game = await Game.findById(gameId)
-        .populate("players")
-        .populate("winner");
+      const game = await this.getGame(gameId);
       // validate if game exists
       if (!game) {
         console.log("GameService.resetGame: Game not found");
+        return;
       }
       // reset game
-      game.winner = undefined;
-      game.chosenNumbers = [];
-      game.unsortedNumbers = generateUnsortedNumbers(75);
-      game.active = true;
+      game.resetGame();
       // save game
       await game.save();
       // return game
@@ -118,15 +102,15 @@ export class GameService {
   static bingo = async (gameId: string, playerId: string) => {
     try {
       // get game
-      const game = await Game.findById(gameId)
-        .populate("players")
-        .populate("winner");
+      const game = await this.getGame(gameId);
       // validate if game exists and is active
       if (!game) {
         console.log("GameService.bingo: Game not found");
+        return;
       }
       if (game.active === false) {
         console.log("GameService.bingo: Game is not active");
+        return;
       }
 
       // find player by id in game players
@@ -134,17 +118,26 @@ export class GameService {
       // validate if player exists
       if (!player) {
         console.log("GameService.bingo: Player not found");
+        return;
       }
       // validate if player has won
-      const win = validateWinner(player.bingoCard, game.chosenNumbers);
-      if (win) {
+      // set full card strategy
+      const selectedGameType = [
+        new FullCardStrategy(), // 0
+        new DiagonalStrategy(), // 1
+        new CornersStrategy(), // 2
+        new FrameStrategy(), // 3
+      ];
+      game.setStrategy(game.gameType ? selectedGameType[game.gameType] : new FullCardStrategy());
+      const hasPlayerWon = game.checkWin(player.getBingoCard());
+      if (hasPlayerWon) {
         // set game winner
         game.winner = player;
         game.active = false;
         // save game
         await game.save();
       }
-      return { game, playerName: player.name, win };
+      return { game, playerName: player.name, hasPlayerWon };
     } catch (error) {
       console.log("GameService.bingo: ", error);
     }
@@ -159,7 +152,7 @@ export class GameService {
     }
   };
 
-  static getGame = async (gameId: string) => {
+  static getGame = async (gameId: string | Schema.Types.ObjectId) => {
     try {
       const game = await Game.findById(gameId)
         .populate("players")
@@ -170,6 +163,15 @@ export class GameService {
     }
   };
 
+  static getPlayer = async (playerId: string) => {
+    try {
+      const player = await User.findById(playerId).populate("game");
+      return player;
+    } catch (error) {
+      console.log("GameService.getPlayer: ", error);
+    }
+  };
+
   static createPlayer = async (newPlayer: {
     name: string;
     wpNumber: string;
@@ -177,9 +179,7 @@ export class GameService {
   }) => {
     try {
       // validate if game exists
-      const game = await Game.findById(newPlayer.gameId)
-        .populate("players")
-        .populate("winner");
+      const game = await this.getGame(newPlayer.gameId);
       if (!game) {
         console.log("GameService.createPlayer: Game not found");
         return;
@@ -196,47 +196,32 @@ export class GameService {
       const playerData = {
         name: newPlayer.name,
         wpNumber: newPlayer.wpNumber,
-        code:
-          newPlayer.name.substring(0, 3).toLowerCase() +
-          generateRandomFourDigitNumber(),
-        bingoCard: generateBingoCard(),
         game: newPlayer.gameId,
-        active: true, // todo: delete this if model changes
       };
       const player = new User(playerData);
-
+      player.setCode();
+      player.changeBingoCard();
       // Add user to game
       game.players.push(player);
-
+      // save player and game
       await Promise.all([player.save(), game.save()]);
-      return game;
+      return { game };
     } catch (error) {
       console.log("GameService.createPlayer: ", error);
+      throw error;
     }
   };
 
   static deletePlayer = async (playerId: string, gameId: string) => {
     // get game
-    const game = await Game.findById(gameId)
-      .populate("players")
-      .populate("winner");
+    const game = await this.getGame(gameId);
     // validate if game exists
     if (!game) {
       console.log("GameService.deletePlayer: Game not found");
       return;
     }
-    // find player by id in game players
-    const player = game.players.find((player) => player.id === playerId);
-    // validate if player exists
-    if (!player) {
-      console.log("GameService.deletePlayer: Player not found");
-      return;
-    }
     // remove player from game
-    const playerIndex = game.players.findIndex(
-      (player) => player.id === playerId
-    );
-    game.players.splice(playerIndex, 1);
+    game.removePlayer(playerId);
     // save game and delete player user
     await Promise.all([User.findByIdAndDelete(playerId), game.save()]);
     return game;
@@ -245,9 +230,7 @@ export class GameService {
   static deleteGame = async (gameId: string) => {
     try {
       // get game
-      const game = await Game.findById(gameId)
-        .populate("players")
-        .populate("winner");
+      const game = await this.getGame(gameId);
       if (!game) {
         console.log("GameService.deleteGame: Game not found");
         return;
@@ -261,7 +244,7 @@ export class GameService {
       await Game.findByIdAndDelete(gameId);
 
       // get all games
-      const games = await Game.find({});
+      const games = await this.getGames();
       return games;
     } catch (error) {
       console.log("GameService.deleteGame: ", error);
@@ -270,23 +253,19 @@ export class GameService {
 
   static changeCard = async (playerId: string, gameId: string) => {
     try {
-      // change player card
-      const player = await User.findByIdAndUpdate(
-        playerId,
-        {
-          bingoCard: generateBingoCard(),
-        },
-        { new: true }
-      ).populate("game");
+      // get player
+      const player = await this.getPlayer(playerId);
       // validate if player exists
       if (!player) {
         console.log("GameService.changeCard: Player not found");
         return;
       }
+      // change player card
+      player.changeBingoCard();
+      // save player
+      await player.save();
       // get game with updated players
-      const game = await Game.findById(gameId)
-        .populate("players")
-        .populate("winner");
+      const game = await this.getGame(gameId);
       // validate if game exists
       if (!game) {
         console.log("GameService.changeCard: Game not found");
@@ -295,6 +274,25 @@ export class GameService {
       return { game, player };
     } catch (error) {
       console.log("GameService.changeCard: ", error);
+    }
+  };
+
+  static changeGameType = async (gameId: string, gameType: number) => {
+    try {
+      // get game
+      const game = await this.getGame(gameId);
+      // validate if game exists
+      if (!game) {
+        console.log("GameService.changeGameType: Game not found");
+        return;
+      }
+      // change game type
+      game.gameType = gameType;
+      // save game
+      await game.save();
+      return game;
+    } catch (error) {
+      console.log("GameService.changeGameType: ", error);
     }
   };
 }

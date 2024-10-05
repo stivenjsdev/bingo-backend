@@ -78,7 +78,7 @@ export const gameHandler = (io: Server, socket: Socket) => {
       io.to(gameId).emit("gameUpdate", gameState);
 
       // emit to all users a message when the game starts
-      const hasGameStarted = gameState?.chosenNumbers?.length === 1;
+      const hasGameStarted = gameState?.drawnBalls?.length === 1;
       if (hasGameStarted) {
         const message =
           "El Juego ha iniciado, se ha sacado la primera balota. ¡Buena suerte!";
@@ -121,16 +121,15 @@ export const gameHandler = (io: Server, socket: Socket) => {
       const {
         game: gameState,
         playerName,
-        win,
+        hasPlayerWon,
       } = await GameService.bingo(gameId, playerId);
 
-      if (!win) {
+      if (!hasPlayerWon) {
         const message = `${
           playerName ? capitalizeWords(playerName) : "Anónimo"
         } ha cantado bingo!, pero no ha completado el cartón.`;
         const icon: SweetAlertIcon = "warning";
         io.to(gameId).emit("message", message, icon);
-        console.log("The player has won", playerName);
       } else {
         const message = `${
           playerName ? capitalizeWords(playerName) : "Anónimo"
@@ -139,6 +138,7 @@ export const gameHandler = (io: Server, socket: Socket) => {
         io.to(gameId).emit("message", message, icon);
         io.to(gameId).emit("gameOver");
         io.to(gameId).emit("gameUpdate", gameState);
+        console.log("The player has won", playerName);
       }
     } catch (error) {
       console.log(error);
@@ -191,7 +191,8 @@ export const gameHandler = (io: Server, socket: Socket) => {
       try {
         console.log("createPlayer handler", newPlayer);
 
-        const gameState = await GameService.createPlayer(newPlayer);
+        // create player
+        const { game: gameState } = await GameService.createPlayer(newPlayer);
         if (!gameState) {
           const message =
             "Error al crear el jugador, por favor intente de nuevo";
@@ -292,6 +293,37 @@ export const gameHandler = (io: Server, socket: Socket) => {
     } catch (error) {
       console.log(error);
       const message = "Error al cambiar el cartón, por favor intente de nuevo";
+      const icon: SweetAlertIcon = "error";
+      socket.emit("message", message, icon);
+    }
+  });
+
+  // Change GameType
+  socket.on("changeGameType", async (gameType, gameId) => {
+    try {
+      console.log("changeGameType handler", gameId, gameType);
+
+      const gameState = await GameService.changeGameType(gameId, gameType);
+
+      if (!gameState) {
+        const message =
+          "Error al cambiar el tipo de juego, por favor intente de nuevo";
+        const icon: SweetAlertIcon = "error";
+        socket.emit("message", message, icon);
+        return;
+      }
+
+      io.to(gameId).emit("gameUpdate", gameState);
+
+      const gameTypeName = ["Cartón Completo", "Diagonal", "4 Esquinas", "Marco"];
+
+      const message = `El tipo de juego ha sido cambiado a ${gameTypeName[gameType]}`;
+      const icon: SweetAlertIcon = "success";
+      io.to(gameId).emit("message", message, icon);
+    } catch (error) {
+      console.log(error);
+      const message =
+        "Error al cambiar el tipo de juego, por favor intente de nuevo";
       const icon: SweetAlertIcon = "error";
       socket.emit("message", message, icon);
     }
